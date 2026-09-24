@@ -1,20 +1,30 @@
 # syntax=docker/dockerfile:1
 #
-# Multi-stage build for Webiny standalone (self-hosted).
+# Multi-stage build for the Webiny monorepo in standalone (self-hosted) mode.
 # Targets: api (Node.js) and admin (Nginx SPA).
 
-# --- builder: produce the self-contained build/ folders -----------------------------------------
+# --- builder: build monorepo packages then produce the self-contained app artifacts ---------------
 FROM node:24-bookworm AS builder
 WORKDIR /project
-ENV WEBINY_HOSTING_TYPE=standalone NODE_ENV=production
+
+# Do NOT set NODE_ENV=production here — devDependencies (tsx, typescript, build-tools) are needed
+# for the monorepo build step.
 COPY . .
 RUN corepack enable && yarn install --immutable
 
-# The Admin bundle bakes its API origin at build time.
+# Build all monorepo packages (compiles TS to dist/ for every @webiny/* package).
+RUN yarn build
+
+# Now set standalone env and build the apps.
+ENV WEBINY_HOSTING_TYPE=standalone
+ENV WEBINY_DB=postgres
+
 ARG WEBINY_API_URL=http://localhost:3002
 ENV WEBINY_API_URL=$WEBINY_API_URL
 
-RUN yarn webiny build api && yarn webiny build admin
+# Use the standalone CLI (via tsx since it's TypeScript source in the monorepo).
+RUN npx tsx packages/cli-standalone/src/bin.ts build api
+RUN npx tsx packages/cli-standalone/src/bin.ts build admin
 
 # --- api: run the self-contained handler (node start.mjs) ---------------------------------------
 FROM node:24-bookworm-slim AS api

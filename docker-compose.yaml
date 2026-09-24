@@ -19,10 +19,13 @@ services:
       context: .
       dockerfile: Dockerfile
       target: api
+      args:
+        WEBINY_API_URL: ${WEBINY_API_URL:-http://localhost:3002}
     restart: unless-stopped
     ports:
       - "3002:3002"
     environment:
+      WEBINY_DB: postgres
       WEBINY_PG_HOST: postgres
       WEBINY_PG_PORT: 5432
       WEBINY_PG_USER: webiny
