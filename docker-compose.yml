@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: webiny
+      POSTGRES_PASSWORD: ${WEBINY_PG_PASSWORD:?Defina WEBINY_PG_PASSWORD nas variaveis de ambiente do Coolify}
+      POSTGRES_DB: webiny
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U webiny -d webiny"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      WEBINY_PG_HOST: postgres
+      WEBINY_PG_PORT: 5432
+      WEBINY_PG_USER: webiny
+      WEBINY_PG_PASSWORD: ${WEBINY_PG_PASSWORD}
+      WEBINY_PG_DATABASE: webiny
+      WEBINY_UPLOAD_SECRET: ${WEBINY_UPLOAD_SECRET:?Defina WEBINY_UPLOAD_SECRET}
+      WEBINY_SELF_HOSTED_AUTH_SECRET: ${WEBINY_SELF_HOSTED_AUTH_SECRET:?Defina WEBINY_SELF_HOSTED_AUTH_SECRET}
+      WEBINY_LOCAL_STORAGE_PATH: /data/storage
+      WEBINY_API_URL: ${WEBINY_API_URL:-http://localhost:3002}
+    volumes:
+      - uploads:/data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: admin
+      args:
+        WEBINY_API_URL: ${WEBINY_API_URL:-http://localhost:3002}
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    depends_on:
+      - api
+
+volumes:
+  pg_data:
+  uploads:
