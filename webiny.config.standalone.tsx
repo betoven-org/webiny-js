@@ -1,9 +1,10 @@
 import React from "react";
-import { Admin } from "webiny/extensions";
+import { Admin, Api } from "webiny/extensions";
 // Server-only namespaces come from the standalone flavour package (webiny/extensions currently exposes
 // the AWS namespaces, which don't include server-only extensions like Infra.Sqlite).
 import { Infra } from "@webiny/project-standalone";
 import { SelfHostedAuth } from "@webiny/self-hosted-auth";
+import { TenantManager } from "@webiny/tenant-manager";
 
 /**
  * Standalone-only extensions, rendered by webiny.config.tsx when WEBINY_HOSTING_TYPE === "standalone".
@@ -55,6 +56,11 @@ export const StandaloneExtensions = () => {
                     process.env.WEBINY_SELF_HOSTED_AUTH_SECRET || "dev-only-insecure-secret"
                 }
             />
+
+            {/* Multi-tenancy: register the TenantManager explicitly for standalone builds.
+                In AWS builds, DefaultExtensions already includes it, but the Api.Extension
+                from project-aws may not be processed by the standalone builder. */}
+            <TenantManager />
         </>
     );
 };
