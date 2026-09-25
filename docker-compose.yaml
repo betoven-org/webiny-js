@@ -35,6 +35,7 @@ services:
       WEBINY_SELF_HOSTED_AUTH_SECRET: ${WEBINY_SELF_HOSTED_AUTH_SECRET:?Defina WEBINY_SELF_HOSTED_AUTH_SECRET}
       WEBINY_LOCAL_STORAGE_PATH: /data/storage
       WEBINY_API_URL: ${WEBINY_API_URL:-http://localhost:3002}
+      WEBINY_MULTI_TENANCY: ${WEBINY_MULTI_TENANCY:-false}
     volumes:
       - uploads:/data/storage
     depends_on:
